@@ -122,6 +122,54 @@ export function getInvoiceItems() {
 }
 
 
+export function addEmployee({ name, email, role }) {
+    const stmt = db.prepare(
+        'INSERT INTO Employee (name, email, role) VALUES (?, ?, ?)'
+    );
+    const info = stmt.run(name, email, role);
+    return info.lastInsertRowid;
+}
+
+export function addClient({ name, contact_name, contact_email }) {
+    const stmt = db.prepare(
+        'INSERT INTO Client (name, contact_name, contact_email) VALUES (?, ?, ?)'
+    );
+    const info = stmt.run(name, contact_name, contact_email);
+    return info.lastInsertRowid;
+}
+
+export function addProject({ client_id, name, description }) {
+    const stmt = db.prepare(
+        'INSERT INTO Project (client_id, name, description) VALUES (?, ?, ?)'
+    );
+    const info = stmt.run(client_id, name, description);
+    return info.lastInsertRowid;
+}
+
+export function addTimesheet({ employee_id, project_id, work_date, hours, hourly_rate, approved = 0, notes }) {
+    const stmt = db.prepare(
+        'INSERT INTO Timesheet (employee_id, project_id, work_date, hours, hourly_rate, approved, notes) VALUES (?, ?, ?, ?, ?, ?, ?)'
+    );
+    const info = stmt.run(employee_id, project_id, work_date, hours, hourly_rate, approved, notes);
+    return info.lastInsertRowid;
+}
+
+export function addInvoice({ client_id, invoice_date, due_date, total_amount, status = 'pending' }) {
+    const stmt = db.prepare(
+        'INSERT INTO Invoice (client_id, invoice_date, due_date, total_amount, status) VALUES (?, ?, ?, ?, ?)'
+    );
+    const info = stmt.run(client_id, invoice_date, due_date, total_amount, status);
+    return info.lastInsertRowid;
+}
+
+export function addInvoiceItem({ invoice_id, timesheet_id, description, hours, hourly_rate, amount }) {
+    const stmt = db.prepare(
+        'INSERT INTO InvoiceItem (invoice_id, timesheet_id, description, hours, hourly_rate, amount) VALUES (?, ?, ?, ?, ?, ?)'
+    );
+    const info = stmt.run(invoice_id, timesheet_id, description, hours, hourly_rate, amount);
+    return info.lastInsertRowid;
+}
+
 // console.log('Employees:', getEmployees());
 // console.log('Clients:', getClients());
 // console.log('Projects:', getProjects());

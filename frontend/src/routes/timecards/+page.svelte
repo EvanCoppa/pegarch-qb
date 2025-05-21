@@ -13,7 +13,7 @@
 
 
 
-    <div class=" flex flex-col w-full h-full overflow-scroll  bg-white shadow-md    p-4 ">
+    <div class=" flex flex-col w-full h-full overflow-scroll  bg-white     p-4 ">
         <div class="w-full text-left    ">
             <div class="bg-gray-100 rounded-2xl  flex flex-row justify-between w-full">
                      <div class="p-4   w-1/8">
@@ -55,7 +55,7 @@
                     </div>
                     <div class="p-4 border-slate-200 w-1/6">
                         <p class="block text-sm text-slate-800">
-                            {timecard.hourly_rate}
+                            {timecard.employee_hourly_rate}
                         </p>
                     </div>
                     <div class="p-4 border-slate-200 w-1/6">

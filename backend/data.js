@@ -122,6 +122,7 @@ export function getTimeCards() {
             Timesheet.*, 
             Employee.employee_id AS employee_id, 
             Employee.name AS employee_name,
+            Employee.hourly_rate AS employee_hourly_rate,
             Project.project_id AS project_id,
             Project.name AS project_name
         FROM Timesheet

@@ -88,7 +88,7 @@ function printAllTables() {
 }
 
 // Test: print all tables
-printAllTables();
+// printAllTables();
 
 
 // Get all employees
@@ -103,12 +103,31 @@ export function getClients() {
 
 // Get all projects
 export function getProjects() {
-    return db.prepare('SELECT * FROM Project').all();
+    return db.prepare(`
+        SELECT 
+            Project.*, 
+            Client.name AS client_name,
+            IFNULL(SUM(Timesheet.hours), 0) AS total_hours
+        FROM Project
+        JOIN Client ON Project.client_id = Client.client_id
+        LEFT JOIN Timesheet ON Timesheet.project_id = Project.project_id
+        GROUP BY Project.project_id
+    `).all();
 }
 
 // Get all timesheets
-export function getTimesheets() {
-    return db.prepare('SELECT * FROM Timesheet').all();
+export function getTimeCards() {
+    return db.prepare(`
+        SELECT 
+            Timesheet.*, 
+            Employee.employee_id AS employee_id, 
+            Employee.name AS employee_name,
+            Project.project_id AS project_id,
+            Project.name AS project_name
+        FROM Timesheet
+        JOIN Employee ON Timesheet.employee_id = Employee.employee_id
+        JOIN Project ON Timesheet.project_id = Project.project_id
+    `).all();
 }
 
 // Get all invoices

@@ -3,7 +3,11 @@ import multer from 'multer';
 import csv from 'csv-parser';
 import fs from 'fs';
 import path from 'path';
-import data from './data';
+import cors from 'cors';
+
+import * as dataLayer from './data.js';
+import * as businessLayer from './business.js';
+
 
 // Import your business/data layer modules here
 // const dataLayer = require('./dataLayer');
@@ -12,6 +16,7 @@ const app = express();
 const upload = multer({ dest: 'uploads/' });
 
 app.use(express.json());
+app.use(cors());
 
 // Route to submit CSV form
 app.post('/api/upload-csv', upload.single('file'), (req, res) => {
@@ -35,7 +40,7 @@ app.post('/api/upload-csv', upload.single('file'), (req, res) => {
 // Get all employees
 app.get('/api/employees', async (req, res) => {
     try {
-        const employees = await data.getEmployees();
+        const employees = await dataLayer.getEmployees();
         res.json(employees);
     } catch (err) {
         res.status(500).json({ error: 'Failed to fetch employees' });
@@ -45,7 +50,7 @@ app.get('/api/employees', async (req, res) => {
 // Get all time cards
 app.get('/api/timecards', async (req, res) => {
     try {
-        const timecards = await data.getTimeCards();
+        const timecards = await dataLayer.getTimeCards();
         res.json(timecards);
     } catch (err) {
         res.status(500).json({ error: 'Failed to fetch time cards' });
@@ -55,7 +60,7 @@ app.get('/api/timecards', async (req, res) => {
 // Get a single employee by ID
 app.get('/api/employees/:id', async (req, res) => {
     try {
-        const employee = await data.getEmployeeById(req.params.id);
+        const employee = await dataLayer.getEmployeeById(req.params.id);
         if (!employee) {
             return res.status(404).json({ error: 'Employee not found' });
         }
@@ -68,12 +73,24 @@ app.get('/api/employees/:id', async (req, res) => {
 // Get time cards for a specific employee
 app.get('/api/employees/:id/timecards', async (req, res) => {
     try {
-        const timecards = await data.getTimeCardsByEmployeeId(req.params.id);
+        const timecards = await dataLayer.getTimeCardsByEmployeeId(req.params.id);
         res.json(timecards);
     } catch (err) {
         res.status(500).json({ error: 'Failed to fetch time cards for employee' });
     }
 });
+
+// get all the projects
+
+app.get('/api/projects', async (req, res) => {
+    try {
+        const projects = await dataLayer.getProjects();
+        res.json(projects);
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to fetch projects' });
+    }
+}
+);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {

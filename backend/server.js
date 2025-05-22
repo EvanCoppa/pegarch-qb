@@ -19,22 +19,14 @@ app.use(express.json());
 app.use(cors());
 
 // Route to submit CSV form
-app.post('/api/upload-csv', upload.single('file'), (req, res) => {
-    const results = [];
-    const filePath = req.file.path;
-
-    fs.createReadStream(filePath)
-        .pipe(csv())
-        .on('data', (data) => results.push(data))
-        .on('end', async () => {
-            // Pass results to your business/data layer for processing
-            // await dataLayer.saveCsvData(results);
-            fs.unlinkSync(filePath); // Clean up uploaded file
-            res.json({ message: 'CSV data submitted successfully', count: results.length });
-        })
-        .on('error', (err) => {
-            res.status(500).json({ error: 'Failed to process CSV file' });
-        });
+app.post('/api/upload-csv', upload.array('files'), (req, res) => {
+  // req.files is an array of uploaded file info
+  if (!req.files || req.files.length === 0) {
+    return res.status(400).json({ error: 'No files uploaded' });
+  }
+  businessLayer.processFiles(req.files);
+  // You can now process each file in req.files
+  res.json({ message: 'Files uploaded successfully', files: req.files });
 });
 
 // Get all employees

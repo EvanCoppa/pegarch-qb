@@ -1,9 +1,21 @@
 <script lang="ts">
+    import Confetti from 'svelte-confetti';
     let files: File[] = [];
     let fileInput: HTMLInputElement;
+    let isDragging = false;
+          let isConfettiActive = false;
+
+    
 
     function handleDrop(event: DragEvent) {
         event.preventDefault();
+        isDragging = false;
+        isConfettiActive = true;
+        setTimeout(() => {
+            isConfettiActive = false;
+        }, 3000);
+        
+        
         if (event.dataTransfer?.files) {
             files = Array.from(event.dataTransfer.files);
         }
@@ -30,7 +42,7 @@
         files.forEach(file => formData.append('files', file));
 
         try {
-            const response = await fetch('/api/upload-csv', {
+            const response = await fetch('http://localhost:3000/api/upload-csv', {
                 method: 'POST',
                 body: formData
             });
@@ -50,10 +62,15 @@
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <div 
-    class="h-[60vh] w-[60vw] border-2 border-black border-dashed mx-auto mt-[15vh] flex flex-col justify-center items-center rounded-2xl"
-    on:drop={handleDrop}
+    class="h-[60vh] w-[60vw] border-2 border-black border-dashed mx-auto mt-[15vh] flex flex-col justify-center items-center rounded-2xl transition-colors duration-200"
+    class:bg-blue-100={isDragging}
+     on:drop={handleDrop}
     on:dragover={handleDragOver}
+    on:dragenter={() => isDragging = true}
 >
+{#if isConfettiActive}
+<Confetti x={[-0.5, 0.5]} y={[-0.5, 0.5]}  fallDistance=50px  amount={75} />
+    {/if}
     <div class="flex flex-row gap-2 mb-4">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V7m-4-4l4 4m0 0l-4 4m4-4H7" />

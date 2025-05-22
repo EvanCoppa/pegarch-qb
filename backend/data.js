@@ -131,6 +131,12 @@ export function getTimeCards() {
     `).all();
 }
 
+function getEmployeeByName(name) {
+    const stmt = db.prepare('SELECT * FROM Employee WHERE name = ?');
+    const employee = stmt.get(name);
+    return employee;
+}
+
 // Get all invoices
 export function getInvoices() {
     return db.prepare('SELECT * FROM Invoice').all();
@@ -158,11 +164,19 @@ export function addClient({ name, contact_name, contact_email }) {
     return info.lastInsertRowid;
 }
 
-export function addProject({ client_id, name, description }) {
-    const stmt = db.prepare(
-        'INSERT INTO Project (client_id, name, description) VALUES (?, ?, ?)'
-    );
-    const info = stmt.run(client_id, name, description);
+export function addProject({ project_id, client_id, name, description }) {
+    let stmt, info;
+    if (project_id !== undefined && project_id !== null) {
+        stmt = db.prepare(
+            'INSERT INTO Project (project_id, client_id, name, description) VALUES (?, ?, ?, ?)'
+        );
+        info = stmt.run(project_id, client_id, name, description);
+    } else {
+        stmt = db.prepare(
+            'INSERT INTO Project (client_id, name, description) VALUES (?, ?, ?)'
+        );
+        info = stmt.run(client_id, name, description);
+    }
     return info.lastInsertRowid;
 }
 
@@ -190,9 +204,91 @@ export function addInvoiceItem({ invoice_id, timesheet_id, description, hours, h
     return info.lastInsertRowid;
 }
 
-// console.log('Employees:', getEmployees());
-// console.log('Clients:', getClients());
-// console.log('Projects:', getProjects());
-// console.log('Timesheets:', getTimesheets());
-// console.log('Invoices:', getInvoices());
-// console.log('Invoice Items:', getInvoiceItems());
+// Ensure all projects are split and created if needed
+export function conformProjects() {
+    const projects = getProjects();
+    const existingNames = new Set(projects.map(p => p.name));
+    console.log('Existing project names:', existingNames);
+    for (const project of projects) {
+        console.log('Processing project:', project);
+        // if (!project.name.includes(' ')) continue;
+        // const [first, second, ...rest] = project.name.split(' ');
+        // if (!second) continue;
+        // const newName = second + (rest.length ? ' ' + rest.join(' ') : '');
+        // if (existingNames.has(newName)) continue;
+        // // Create new project with same client and description, but new name
+        // addProject({
+        //     client_id: project.client_id,
+        //     name: newName,
+        //     description: project.description
+        // });
+        // existingNames.add(newName);
+    }
+}
+
+// Files: [
+//   {
+//     originalName: '1.06 - 1.19-Table 1.csv',
+//     data: [
+//       [Object], [Object], [Object], [Object],
+//       [Object], [Object], [Object], [Object],
+//       [Object], [Object], [Object], [Object],
+//       [Object], [Object], [Object], [Object],
+//       [Object], [Object], [Object], [Object],
+//       [Object], [Object], [Object], [Object],
+//       [Object], [Object], [Object], [Object],
+//       [Object], [Object], [Object], [Object],
+//       [Object], [Object], [Object], [Object],
+//       [Object], [Object], [Object], [Object],
+//       [Object], [Object], [Object], [Object],
+//       [Object], [Object], [Object]
+//     ]
+//   }
+// ]
+
+export function saveFiles(files){
+    const currentProjects = getProjects();
+    const existingNames = new Set(currentProjects.map(p => p.name));
+    // console.log('Existing project names:', existingNames);
+    const projects = files.map(file => file.data).flat();
+    const name = projects[0].name;
+    projects.splice(0, 1);
+    // get person by name from the database
+    const employee = getEmployeeByName(name);
+     console.log('Employee:', employee);
+
+ 
+    // console.log('Projects:', projects);
+    
+    for (const project of projects) {
+        const [project_id, ...nameParts] = project.Projects.split(' ');
+        const project_name = nameParts.join(' ');
+        delete project.Projects;
+        if (project_name){
+        // Check if the project already exists
+        if (existingNames.has(project_name)) {
+            // console.log('Project already exists:', project_name);
+        }else{
+            // Create new project with same client and description, but new name
+            addProject({ project_id: project_id,
+                client_id: 0,
+                name: project_name,
+                description: ""
+            });}
+            existingNames.add(project_name);
+         // create a timesheet   
+         for (let date in project){
+            let hours = 0;
+            if (date != 'Pay Period Total'){
+                hours = hours + parseFloat(project[date]);
+            // add up the hours work for each date and then get the real ours and add them to the timesheet as a time sheet line item
+                // console.log(project_name + ': Date(' + date + ') ' + 'Hours(' + project[date] + ')');
+            }
+            // console.log('Adding timesheet for project:', project_name);
+            // console.log('Hours:', hours);
+        }
+    }
+    }
+
+    return []
+ }

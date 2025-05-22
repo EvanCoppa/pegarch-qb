@@ -59,11 +59,7 @@ try {
 
 // Print all tables and their rows
 function printAllTables() {
-  const tables = db
-    .prepare(
-      "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%';"
-    )
-    .all();
+  const tables = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%';").all();
   console.log("Tables:", tables);
   for (const { name } of tables) {
     const rows = db.prepare(`SELECT * FROM ${name}`).all();
@@ -111,19 +107,22 @@ function getProjectIdByName(name) {
 
 // Get all timesheets
 export function getTimeCards() {
-  return db
-    .prepare(
-      `
-        SELECT 
-            Timesheet.*, 
-            Employee.employee_id AS employee_id, 
-            Employee.name AS employee_name,
-            Employee.hourly_rate AS employee_hourly_rate
-        FROM Timesheet
-        JOIN Employee ON Timesheet.employee_id = Employee.employee_id
-    `
-    )
-    .all();
+    return db
+        .prepare(
+            `
+                SELECT 
+                        Timesheet.*, 
+                        Employee.employee_id AS employee_id, 
+                        Employee.name AS employee_name,
+                        Employee.hourly_rate AS employee_hourly_rate,
+                        IFNULL(SUM(TimesheetItem.hours), 0) AS hours
+                FROM Timesheet
+                JOIN Employee ON Timesheet.employee_id = Employee.employee_id
+                LEFT JOIN TimesheetItem ON Timesheet.timesheet_id = TimesheetItem.timesheet_id
+                GROUP BY Timesheet.timesheet_id
+            `
+        )
+        .all();
 }
 
 function getEmployeeByName(name) {
@@ -143,9 +142,7 @@ export function getInvoiceItems() {
 }
 
 export function addEmployee({ name, email, role }) {
-  const stmt = db.prepare(
-    "INSERT INTO Employee (name, email, role) VALUES (?, ?, ?)"
-  );
+  const stmt = db.prepare("INSERT INTO Employee (name, email, role) VALUES (?, ?, ?)");
   const info = stmt.run(name, email, role);
   return info.lastInsertRowid;
 }
@@ -155,9 +152,7 @@ export function addClient({ client_id, name, contact_name, contact_email }) {
 
   const intClientId = parseInt(client_id, 10);
 
-  const stmt = db.prepare(
-    "INSERT INTO Client (client_id, name, contact_name, contact_email) VALUES (?, ?, ?, ?)"
-  );
+  const stmt = db.prepare("INSERT INTO Client (client_id, name, contact_name, contact_email) VALUES (?, ?, ?, ?)");
   const info = stmt.run(intClientId, name, contact_name, contact_email);
   return info.lastInsertRowid;
 }
@@ -165,92 +160,44 @@ export function addClient({ client_id, name, contact_name, contact_email }) {
 export function addProject({ client_id, name, description }) {
   let stmt, info;
 
-  stmt = db.prepare(
-    "INSERT INTO Project (client_id, name, description) VALUES (?, ?, ?)"
-  );
+  stmt = db.prepare("INSERT INTO Project (client_id, name, description) VALUES (?, ?, ?)");
   info = stmt.run(client_id, name, description);
 
   return info.lastInsertRowid;
 }
 
-export function addTimesheet({
-  employee_id,
-  approved = 0,
-  notes,
-  start_date,
-  end_date,
-}) {
-  const stmt = db.prepare(
-    "INSERT INTO Timesheet (employee_id, approved, notes, start_date, end_date) VALUES (?, ?, ?, ?, ?)"
-  );
-  const info = stmt.run(
-    employee_id,
-    approved,
-    notes,
-    start_date,
-    end_date
-  );
+export function addTimesheet({ employee_id, approved = 0, notes, start_date, end_date }) {
+  const stmt = db.prepare("INSERT INTO Timesheet (employee_id, approved, notes, start_date, end_date) VALUES (?, ?, ?, ?, ?)");
+  const info = stmt.run(employee_id, approved, notes, start_date, end_date);
   return info.lastInsertRowid;
 }
 
 export function addTimesheetItem({ timesheet_id, project_id, hours, notes }) {
-    console.log('Adding timesheet item:', timesheet_id);
-    console.log('Project ID:', project_id);
-    console.log('Hours:', hours);
-    console.log('Notes:', notes);
-  const stmt = db.prepare(
-    "INSERT INTO TimesheetItem (timesheet_id, project_id, hours, notes) VALUES (?, ?, ?, ?)"
-  );
-//   console.log(
-//     "Adding timesheet item:",
-//     timesheet_id,
-//     project_id,
-//     hours,
-//     notes
-//   );
+  console.log("Adding timesheet item:", timesheet_id);
+  console.log("Project ID:", project_id);
+  console.log("Hours:", hours);
+  console.log("Notes:", notes);
+  const stmt = db.prepare("INSERT INTO TimesheetItem (timesheet_id, project_id, hours, notes) VALUES (?, ?, ?, ?)");
+  //   console.log(
+  //     "Adding timesheet item:",
+  //     timesheet_id,
+  //     project_id,
+  //     hours,
+  //     notes
+  //   );
   const info = stmt.run(timesheet_id, project_id, hours, notes);
   return info.lastInsertRowid;
 }
 
-export function addInvoice({
-  client_id,
-  invoice_date,
-  due_date,
-  total_amount,
-  status = "pending",
-}) {
-  const stmt = db.prepare(
-    "INSERT INTO Invoice (client_id, invoice_date, due_date, total_amount, status) VALUES (?, ?, ?, ?, ?)"
-  );
-  const info = stmt.run(
-    client_id,
-    invoice_date,
-    due_date,
-    total_amount,
-    status
-  );
+export function addInvoice({ client_id, invoice_date, due_date, total_amount, status = "pending" }) {
+  const stmt = db.prepare("INSERT INTO Invoice (client_id, invoice_date, due_date, total_amount, status) VALUES (?, ?, ?, ?, ?)");
+  const info = stmt.run(client_id, invoice_date, due_date, total_amount, status);
   return info.lastInsertRowid;
 }
 
-export function addInvoiceItem({
-  invoice_id,
-  timesheet_id,
-  description,
-  hours,
-  hourly_rate,
-  amount,
-}) {
-  const stmt = db.prepare(
-    "INSERT INTO InvoiceItem (invoice_id, timesheet_id, description, hours, hourly_rate, amount) VALUES (?, ?, ?, ?, ?, ?)"
-  );
-  const info = stmt.run(
-    invoice_id,
-    timesheet_id,
-    description,
-    hours,
-    hourly_rate,
-    amount
-  );
+export function addInvoiceItem({ invoice_id, timesheet_id, description, hours, hourly_rate, amount }) {
+  const stmt = db.prepare("INSERT INTO InvoiceItem (invoice_id, timesheet_id, description, hours, hourly_rate, amount) VALUES (?, ?, ?, ?, ?, ?)");
+  const info = stmt.run(invoice_id, timesheet_id, description, hours, hourly_rate, amount);
   return info.lastInsertRowid;
 }
 
@@ -336,24 +283,9 @@ export function saveFiles(files) {
   const name = projects[0].name;
   projects.splice(0, 1);
   const employee = getEmployeeByName(name);
-  // console.log('Employee:', employee);
-const timesheet_id = addTimesheet({
-        employee_id: employee.employee_id,
-        approved: 0,
-        notes: "",
-        start_date: "2023-01-01",
-        end_date: "2023-01-01",
-      });
-  // console.log('Projects:', projects);
+  const timesheet_id = addTimesheet({ employee_id: employee.employee_id, approved: 0, notes: "", start_date: "2023-01-01", end_date: "2023-01-01",});
   for (const project of projects) {
-    // console.log('Processing project:', project);
-    if (
-      !project.Projects ||
-      project.Projects === "" ||
-      project.Projects === "Projects" ||
-      project.Projects === "Totals:"
-    ) {
-      // console.log('No project name found, skipping...');
+    if (!project.Projects || project.Projects === "" || project.Projects === "Projects" || project.Projects === "Totals:") {
       continue;
     }
     const [client_id, ...nameParts] = project.Projects.split(" ");
@@ -363,29 +295,13 @@ const timesheet_id = addTimesheet({
     ensureProject(project_name, client_id);
     delete project.Projects;
     if (project_name) {
-      // create the timesheet
-      
       let hours = 0;
       for (let date in project) {
-        // console.log(!isNaN(parseFloat(project[date])));
-        // console.log(parseFloat(project[date]));
         if (date != "Pay Period Total" && !isNaN(parseFloat(project[date]))) {
           hours = hours + parseFloat(project[date]);
-          // add up the hours work for each date and then get the real ours and add them to the timesheet as a time sheet line item
-          // console.log(project_name + ': Date(' + date + ') ' + 'Hours(' + project[date] + ')');
-          // console.log('Hours:', hours);
         }
       }
-      // add the timesheet line item
-     
-      const timesheet_item_id = addTimesheetItem({
-        timesheet_id: timesheet_id,
-        project_id: getProjectIdByName(project_name).project_id,
-        hours: hours,
-        notes: 'None',
-      });
-      console.log("Adding timesheet for project:", project_name);
-      console.log("Hours:", hours);
+      addTimesheetItem({ timesheet_id: timesheet_id, project_id: getProjectIdByName(project_name).project_id, hours: hours, notes: "None", });
     }
   }
 

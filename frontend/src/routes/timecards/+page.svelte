@@ -37,7 +37,7 @@
              </div>
             <div>
                 {#each timecards as timecard}
-                <div class="flex flex-row justify-between">
+                <div class="flex flex-row justify-between ">
                     <div class="p-4 border-slate-200  w-1/8">
                         <p class="block text-sm text-slate-800">
                             {timecard.timesheet_id}
@@ -60,16 +60,16 @@
                     </div>
                     <div class="p-4 border-slate-200 w-1/6">
                         <p class="block text-sm text-slate-800">
-                            {timecard.work_date}
+                            {timecard.start_date + ' - ' + timecard.end_date}
                         </p>
                     </div>
-                    <div class="p-4 border-slate-200 flex gap-4 w-1/6 ">
-                        <a href="#" class=" text-sm font-semibold text-blue-600 hover:underline text-center">
-                            Edit
-                        </a>
-                        <a href="#" class=" text-sm font-semibold text-blue-600 hover:underline text-center">
-                            Generate Invoice
-                        </a>
+                    <div class="p-4 border-slate-200 flex gap-4 w-1/6 flex-wrap ">
+                        <button  class=" text-sm font-semibold text-white text-center hover:underline  grow h-8 min-w-[60px]  bg-blue-600 rounded-lg">
+                            <a href="/" aria-label="Edit Details">Edit</a>
+                        </button>
+                        <button  class=" text-sm font-semibold text-white text-center hover:underline grow h-8 min-w-[60px] bg-red-600 rounded-lg">
+                            <a href="/" aria-label="Edit Details">Delete</a>
+                        </button>
                     </div>
                 </div>
                 {/each}

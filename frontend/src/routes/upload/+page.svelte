@@ -101,8 +101,11 @@
     </div>
     {#if files.length > 0}
         <ul class="mt-2">
-            {#each files as file}
-                <li>{file.name}</li>
+            {#each files as file, i}
+                <li>
+                    <span>{file.name}</span>
+                    <button class="bg-gray-100 hover:bg-gray-200 rounded-2xl ml-2 w-6 h-6 text-sm" on:click={() => files = files.filter((_, j) => j !== i)}>X</button>
+                </li>
             {/each}
         </ul>
     {/if}

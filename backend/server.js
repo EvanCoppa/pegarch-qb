@@ -78,6 +78,16 @@ app.get('/api/employees/:id/timecards', async (req, res) => {
     }
 });
 
+app.get('/api/timecarditems/:id', async (req, res) => {
+    try {
+        
+        const timecardItem = await dataLayer.getTimeCardItemById(req.params.id);
+        
+        res.json(timecardItem);
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to fetch time card item' });
+    }
+});
 // get all the projects
 
 app.get('/api/projects', async (req, res) => {

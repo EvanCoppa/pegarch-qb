@@ -125,6 +125,25 @@ export function getTimeCards() {
         .all();
 }
 
+// Get all timesheet items by timesheet ID
+export function getTimeCardItemById(timesheet_id) {
+    return db
+        .prepare(
+        `
+            SELECT 
+                TimesheetItem.*, 
+                Project.name AS project_name,
+                Employee.name AS employee_name
+            FROM TimesheetItem
+            JOIN Project ON TimesheetItem.project_id = Project.project_id
+            JOIN Timesheet ON TimesheetItem.timesheet_id = Timesheet.timesheet_id
+            JOIN Employee ON Timesheet.employee_id = Employee.employee_id
+            WHERE TimesheetItem.timesheet_id = ?
+        `
+        )
+        .all(timesheet_id);
+    }
+
 function getEmployeeByName(name) {
   const stmt = db.prepare("SELECT * FROM Employee WHERE name = ?");
   const employee = stmt.get(name);
@@ -201,47 +220,7 @@ export function addInvoiceItem({ invoice_id, timesheet_id, description, hours, h
   return info.lastInsertRowid;
 }
 
-// Ensure all projects are split and created if needed
-export function conformProjects() {
-  const projects = getProjects();
-  const existingNames = new Set(projects.map((p) => p.name));
-  console.log("Existing project names:", existingNames);
-  for (const project of projects) {
-    console.log("Processing project:", project);
-    // if (!project.name.includes(' ')) continue;
-    // const [first, second, ...rest] = project.name.split(' ');
-    // if (!second) continue;
-    // const newName = second + (rest.length ? ' ' + rest.join(' ') : '');
-    // if (existingNames.has(newName)) continue;
-    // // Create new project with same client and description, but new name
-    // addProject({
-    //     client_id: project.client_id,
-    //     name: newName,
-    //     description: project.description
-    // });
-    // existingNames.add(newName);
-  }
-}
 
-// Files: [
-//   {
-//     originalName: '1.06 - 1.19-Table 1.csv',
-//     data: [
-//       [Object], [Object], [Object], [Object],
-//       [Object], [Object], [Object], [Object],
-//       [Object], [Object], [Object], [Object],
-//       [Object], [Object], [Object], [Object],
-//       [Object], [Object], [Object], [Object],
-//       [Object], [Object], [Object], [Object],
-//       [Object], [Object], [Object], [Object],
-//       [Object], [Object], [Object], [Object],
-//       [Object], [Object], [Object], [Object],
-//       [Object], [Object], [Object], [Object],
-//       [Object], [Object], [Object], [Object],
-//       [Object], [Object], [Object]
-//     ]
-//   }
-// ]
 
 function ensureProject(project_name, client_id = 0) {
   const projects = getProjects();

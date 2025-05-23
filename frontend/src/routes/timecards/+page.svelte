@@ -39,9 +39,9 @@
                 {#each timecards as timecard}
                 <div class="flex flex-row justify-between ">
                     <div class="p-4 border-slate-200  w-1/8">
-                        <p class="block text-sm text-slate-800">
+                        <a href="/timecards/{timecard.timesheet_id}" hover class="block text-sm text-slate-800 hover:underline">
                             {timecard.timesheet_id}
-                        </p>
+                        </a>
                     </div>
                     <div class="p-4 border-slate-200 w-1/6">
                         <p class="block text-sm text-slate-800">

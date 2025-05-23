@@ -36,6 +36,11 @@
                 <img class="h-6 w-6 my-auto" src="https://img.icons8.com/?size=100&id=aqA6WUt1iktl&format=png&color=27272a" alt="">
                 <a href="/employees" class="">Employees</a>
             </li>
+            <li class="flex gap-1.5 p-1 rounded-md"
+                class:bg-zinc-100={$activeRoute === 'invoices'}>
+                <img class="h-6 w-6 my-auto" src="https://img.icons8.com/?size=100&id=aqA6WUt1iktl&format=png&color=27272a" alt="">
+                <a href="/invoices" class="">Invoices</a>
+            </li>
         </ul>
     </div>
 </div>

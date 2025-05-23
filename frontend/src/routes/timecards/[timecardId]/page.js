@@ -1,0 +1,1 @@
+const slug = params.slug

@@ -99,6 +99,13 @@ export function getProjects() {
     .all();
 }
 
+export function getProjectById(project_id) {
+    const stmt = db.prepare("SELECT * FROM Project WHERE project_id = ?");
+    const project = stmt.get(project_id);
+    return project;
+    }
+    
+
 function getProjectIdByName(name) {
   const stmt = db.prepare("SELECT project_id FROM Project WHERE name = ?");
   const project = stmt.get(name);
@@ -123,6 +130,44 @@ export function getTimeCards() {
             `
         )
         .all();
+}
+
+export function getTimeCardById(timesheet_id) {
+    return db
+        .prepare(
+            `
+                SELECT 
+                    Timesheet.*, 
+                    Employee.name AS employee_name,
+                    Employee.hourly_rate AS employee_hourly_rate,
+                    IFNULL(SUM(TimesheetItem.hours), 0) AS total_hours
+                FROM Timesheet
+                JOIN Employee ON Timesheet.employee_id = Employee.employee_id
+                LEFT JOIN TimesheetItem ON Timesheet.timesheet_id = TimesheetItem.timesheet_id
+                WHERE Timesheet.timesheet_id = ?
+                GROUP BY Timesheet.timesheet_id
+            `
+        )
+        .get(timesheet_id);
+}
+
+export function getTimeCardsByProjectId(project_id) {
+    return db
+        .prepare(
+            `
+                SELECT 
+                    Timesheet.*, 
+                    Employee.name AS employee_name,
+                    Employee.hourly_rate AS employee_hourly_rate,
+                    IFNULL(SUM(TimesheetItem.hours), 0) AS total_hours
+                FROM Timesheet
+                JOIN Employee ON Timesheet.employee_id = Employee.employee_id
+                LEFT JOIN TimesheetItem ON Timesheet.timesheet_id = TimesheetItem.timesheet_id
+                WHERE TimesheetItem.project_id = ?
+                GROUP BY Timesheet.timesheet_id
+            `
+        )
+        .all(project_id);
 }
 
 // Get all timesheet items by timesheet ID
@@ -154,6 +199,32 @@ function getEmployeeByName(name) {
 export function getInvoices() {
   return db.prepare("SELECT * FROM Invoice").all();
 }
+
+export function getInvoiceById(invoice_id) {
+  const stmt = db.prepare("SELECT * FROM Invoice WHERE invoice_id = ?");
+  const invoice = stmt.get(invoice_id);
+  return invoice;
+}
+
+ export function createInvoice({ client_id, invoice_date, due_date, items = [], status = "pending" }) {
+    const total_amount = items.reduce((sum, item) => sum + (item.amount || 0), 0);
+    const invoice_id = addInvoice({ client_id, invoice_date, due_date, total_amount, status });
+
+    for (const item of items) {
+        addInvoiceItem({
+            invoice_id,
+            timesheet_id: item.timesheet_id,
+            description: item.description,
+            hours: item.hours,
+            hourly_rate: item.hourly_rate,
+            amount: item.amount,
+        });
+    }
+
+    return invoice_id;
+}
+
+
 
 // Get all invoice items
 export function getInvoiceItems() {

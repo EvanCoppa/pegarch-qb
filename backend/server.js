@@ -55,6 +55,29 @@ app.get('/api/timecards', async (req, res) => {
     }
 });
 
+// get time card by id
+app.get('/api/timecards/:id', async (req, res) => {
+    try {
+        const timecard = await dataLayer.getTimeCardById(req.params.id);
+        if (!timecard) {
+            return res.status(404).json({ error: 'Time card not found' });
+        }
+        res.json(timecard);
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to fetch time card' });
+    }
+});
+
+// get timecards by project id
+app.get('/api/projects/:id/timecards', async (req, res) => {
+    try {
+        const timecards = await dataLayer.getTimeCardsByProjectId(req.params.id);
+        res.json(timecards);
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to fetch time cards for project' });
+    }
+});
+
 // Get a single employee by ID
 app.get('/api/employees/:id', async (req, res) => {
     try {
@@ -88,7 +111,44 @@ app.get('/api/timecarditems/:id', async (req, res) => {
         res.status(500).json({ error: 'Failed to fetch time card item' });
     }
 });
-// get all the projects
+
+// get all invoice
+app.get('/api/invoices', async (req, res) => {
+    try {
+        const invoices = await dataLayer.getInvoices();
+        res.json(invoices);
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to fetch invoices' });
+    }
+}
+);
+
+// get all the invoices by id 
+app.get('/api/invoices/:id', async (req, res) => {
+    try {
+        const invoice = await dataLayer.getInvoiceById(req.params.id);
+        if (!invoice) {
+            return res.status(404).json({ error: 'Invoice not found' });
+        }
+        res.json(invoice);
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to fetch invoice' });
+    }
+}
+);
+
+
+// create a new invoice
+app.post('/api/invoices', async (req, res) => {
+    try {
+        const { employee_id, date, amount } = req.body;
+        const newInvoice = await dataLayer.createInvoice(employee_id, date, amount);
+        res.status(201).json(newInvoice);
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to create invoice' });
+    }
+}
+);
 
 app.get('/api/projects', async (req, res) => {
     try {
@@ -96,6 +156,19 @@ app.get('/api/projects', async (req, res) => {
         res.json(projects);
     } catch (err) {
         res.status(500).json({ error: 'Failed to fetch projects' });
+    }
+}
+);
+
+app.get('/api/projects/:id', async (req, res) => {
+    try {
+        const project = await dataLayer.getProjectById(req.params.id);
+        if (!project) {
+            return res.status(404).json({ error: 'Project not found' });
+        }
+        res.json(project);
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to fetch project' });
     }
 }
 );

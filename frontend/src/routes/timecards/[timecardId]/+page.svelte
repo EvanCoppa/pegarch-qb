@@ -11,6 +11,9 @@
     if (res.ok) {
       timecard_items = await res.json();
       timecard = await resTimecard.json();
+      const hoursArray = data.map(item => item.hours);
+
+      console.log(timecard_items);
       console.log(timecard);
     }
   });

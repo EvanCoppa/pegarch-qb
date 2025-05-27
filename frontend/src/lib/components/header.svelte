@@ -19,18 +19,18 @@
         </div>
         <div class="bg-gray-100 flex h-6 my-auto rounded-sm px-2 mx-2 border-1 border-gray-200 hover:bg-gray-200 hover:border-gray-300">
             <a href="/upload" class="m-auto text-sm text-gray-700">
-                <span>Create</span>
+                <span>Upload</span>
                 <span>+</span>
             </a>
         </div>
     </div>
-    <nav class="flex w-1/3">
+    <!-- <nav class="flex w-1/3">
         <ul class="flex flex-row gap-4 m-auto text-sm text-gray-700">
             <li><a href="/">Home</a></li>
             <li><a href="/upload">Upload</a></li>
             <li><a href="/contact">Dash</a></li>
         </ul>
-    </nav>
+    </nav> -->
     <div class="flex w-1/3 gap-2">
         <button class="bg-gray-200 text-black text-sm px-4 rounded ml-auto">
             Sign Up

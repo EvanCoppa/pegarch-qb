@@ -1,1 +1,0 @@
-const slug = params.slug

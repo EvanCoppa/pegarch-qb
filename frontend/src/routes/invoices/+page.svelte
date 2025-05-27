@@ -16,14 +16,13 @@
  </script>
 
 
-<button class="hidden" bind:this={modalButton}></button>
 
 <!-- Attach to the "New Invoice" button -->
-<svelte:window
+<!-- <svelte:window
   on:keydown={(e) => {
-    if (e.key === "Escape") showModal = false;
+    if (e.key === "Escape") let test = false;
   }}
-/>
+/> -->
 
 <div class=" flex flex-col w-full h-full overflow-scroll bg-white p-4">
 

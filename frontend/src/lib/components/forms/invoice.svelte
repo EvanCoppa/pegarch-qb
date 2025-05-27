@@ -26,8 +26,7 @@
 
       <div class="p-4 w-1/6">Action</div>
     </div>
-    <form>
-      {#each projects as project}
+       {#each projects as project}
         <div class="flex flex-row justify-between">
             <div class="p-4 w-1/8">
                 <input type="checkbox" value="">
@@ -59,6 +58,5 @@
           </div>
         </div>
       {/each}
-    </form>
-  </form>
+   </form>
  

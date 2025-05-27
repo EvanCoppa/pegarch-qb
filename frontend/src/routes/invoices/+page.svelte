@@ -16,16 +16,15 @@
  </script>
 
 
-<button class="hidden" bind:this={modalButton}></button>
 
 <!-- Attach to the "New Invoice" button -->
-<svelte:window
+<!-- <svelte:window
   on:keydown={(e) => {
-    if (e.key === "Escape") showModal = false;
+    if (e.key === "Escape") let test = false;
   }}
-/>
+/> -->
 
-<div class=" flex flex-col w-full h-full overflow-scroll bg-white p-4">
+<div class=" flex flex-col w-full h-full overflow-scroll bg-white p-4 overflow-auto">
 
   <div class="flex flex-row justify-between m-4">
     <h1 class="text-3xl font-semibold my-auto">Invoices</h1>

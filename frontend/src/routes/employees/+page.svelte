@@ -13,7 +13,7 @@
 
  
 
-    <div class=" flex flex-col w-full h-full overflow-scroll  bg-white     p-4 ">
+    <div class=" flex flex-col w-full h-full overflow-x-hidden  bg-white     p-4 ">
          <div class="flex flex-row justify-between m-4">
             <h1 class="text-3xl font-semibold my-auto">Employees</h1>
             <button class="w-38 h-10 rounded-lg bg-blue-600 text-white hover:scale-105 hover:bg-blue-500 duration-100" on:click={() => {showModal = true}}>New Employee</button>

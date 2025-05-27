@@ -1,5 +1,6 @@
 export function calculateBillableHours(hours, hourlyRate, pegarchBillableRate, costMultiplier) {
-return Math.round(costMultiplier * hours * (hourlyRate / pegarchBillableRate));
+   console.log(costMultiplier * hours * (hourlyRate / pegarchBillableRate));
+return Math.ceil(costMultiplier * hours * (hourlyRate / pegarchBillableRate));
 }
 
 export function calculateFinalBillable(billablelHours, pegarchBillableRate) {

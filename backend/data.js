@@ -57,19 +57,7 @@ try {
   process.exit(1);
 }
 
-// Print all tables and their rows
-function printAllTables() {
-  const tables = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%';").all();
-  console.log("Tables:", tables);
-  for (const { name } of tables) {
-    const rows = db.prepare(`SELECT * FROM ${name}`).all();
-    console.log(`Table: ${name}`);
-    console.table(rows);
-  }
-}
 
-// Test: print all tables
-// printAllTables();
 
 // Get all employees
 export function getEmployees() {
@@ -263,10 +251,10 @@ export function addTimesheet({ employee_id, approved = 0, notes, start_date, end
 }
 
 export function addTimesheetItem({ timesheet_id, project_id, hours, notes }) {
-  console.log("Adding timesheet item:", timesheet_id);
-  console.log("Project ID:", project_id);
-  console.log("Hours:", hours);
-  console.log("Notes:", notes);
+  // console.log("Adding timesheet item:", timesheet_id);
+  // console.log("Project ID:", project_id);
+  // console.log("Hours:", hours);
+  // console.log("Notes:", notes);
   const stmt = db.prepare("INSERT INTO TimesheetItem (timesheet_id, project_id, hours, notes) VALUES (?, ?, ?, ?)");
   //   console.log(
   //     "Adding timesheet item:",
@@ -331,9 +319,12 @@ function ensureClient(client_id) {
 export function saveFiles(files) {
   const projects = files.map((file) => file.data).flat();
   const name = projects[0].name;
+  // console.log("Saving files for employee:", projects);
   projects.splice(0, 1);
+  const start_date = Object.entries(projects[1])[1][0];
+  const end_date = Object.entries(projects[1])[14][0];
   const employee = getEmployeeByName(name);
-  const timesheet_id = addTimesheet({ employee_id: employee.employee_id, approved: 0, notes: "", start_date: "2023-01-01", end_date: "2023-01-01",});
+  const timesheet_id = addTimesheet({ employee_id: employee.employee_id, approved: 0, notes: "", start_date: start_date, end_date: end_date,});
   for (const project of projects) {
     if (!project.Projects || project.Projects === "" || project.Projects === "Projects" || project.Projects === "Totals:") {
       continue;

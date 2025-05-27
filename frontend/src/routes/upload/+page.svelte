@@ -1,9 +1,12 @@
 <script lang="ts">
+  import { error } from '@sveltejs/kit';
     import Confetti from 'svelte-confetti';
     let files: File[] = [];
     let fileInput: HTMLInputElement;
     let isDragging = false;
-          let isConfettiActive = false;
+    let isConfettiActive = false;
+    let message;
+    let message_opacity = 0;
 
     
 
@@ -48,14 +51,21 @@
             });
 
             if (!response.ok) {
-                alert('Upload failed');
+                message = await response.json();
             } else {
-                alert('Upload successful');
+                message = await response.json();
+                console.log('Upload successful:', message);
                 files = [];
             }
         } catch (error) {
-            alert('An error occurred during upload');
+            console.error('Upload failed:', error);
+            message = { error: 'Failed to upload files. Please try again.' };
         }
+        // wait 4 seconds before clearing the message
+        message_opacity = 1;
+        setTimeout(() => {
+            message_opacity = 0;
+        }, 4000);
     }
 </script>
 <div class="w-full h-screen bg-gray-50 flex">
@@ -71,11 +81,16 @@
 {#if isConfettiActive}
 <Confetti x={[-0.5, 0.5]} y={[-0.5, 0.5]}  fallDistance=50px  amount={75} />
     {/if}
+        <span class={message?.error ? "text-red-500" : "text-green-500"} style="opacity: {message_opacity}; transition: opacity 0.3s;"
+        >
+            {message?.error ? `Error: ${message.error}` : `Success: ${message?.message}`}
+        </span>
     <div class="flex flex-row gap-2 mb-4">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V7m-4-4l4 4m0 0l-4 4m4-4H7" />
         </svg>
-        <span>Drag and drop your timecards in csv format here! 🎉</span>
+        
+         <span>Drag and drop your timecards in csv format here! 🎉</span>
     </div>
     <input 
         type="file" 

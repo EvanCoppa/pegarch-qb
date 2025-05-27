@@ -24,7 +24,7 @@
   }}
 /> -->
 
-<div class=" flex flex-col w-full h-full overflow-scroll bg-white p-4">
+<div class=" flex flex-col w-full h-full overflow-scroll bg-white p-4 overflow-auto">
 
   <div class="flex flex-row justify-between m-4">
     <h1 class="text-3xl font-semibold my-auto">Invoices</h1>

@@ -19,7 +19,7 @@
   });
 </script>
 
-<div class=" flex flex-col w-full h-full overflow-scroll bg-white p-4">
+<div class=" flex flex-col w-full h-full overflow-x-hidden bg-white p-4">
   <div class="flex flex-row justify-between m-4">
     <h1 class="text-3xl font-semibold my-auto">All Timesheets from {project.name} </h1>
    </div>

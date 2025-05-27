@@ -41,28 +41,31 @@ app.post('/api/upload-csv', upload.array('files'), async (req, res) => {
 
 // calculateFinalBillable endpoint
 app.post('/api/calculate-billables', (req, res) => {
-    const { hours, hourlyRate } = req.body;
+    const { hours, hourly_rate } = req.body;
     const pegarchBillableRate = 185; 
     const costMultiplier = 3; 
-    let realHours = 0;
-    let finalBillable = 0;
+    let realHoursArray = [];
+    let finalBillable = [];
 
-    if (typeof hours !== 'object' || typeof hourlyRate !== 'number' || hourlyRate < 0) {
+    if (typeof hours !== 'object' || typeof hourly_rate !== 'number' || hourly_rate < 0) {
         return res.status(400).json({ error: 'Invalid input data' });
     }
+    console.log('Received hours:', hours);
+    console.log('Received hourly_rate:', hourly_rate);
     try {
         for (const project_hours of hours) {
-             realHours = businessLayer.calculateBillableHours(project_hours, hourlyRate, pegarchBillableRate, costMultiplier);
-             finalBillable = businessLayer.calculateFinalBillable(realHours, pegarchBillableRate);
+            let realHours = businessLayer.calculateBillableHours(project_hours, hourly_rate, pegarchBillableRate, costMultiplier);
+            realHoursArray.push(realHours);
+            finalBillable.push(businessLayer.calculateFinalBillable(realHours, pegarchBillableRate));
         }
-        res.json({ realHours, finalBillable });
+        res.json({realHoursArray , finalBillable });
     } catch (err) {
-        res.status(500).json({ error: 'Failed to calculate billable amount' });
+        res.status(500).json({ error: 'Failed to calculate billable amount ' + err.message });
     }
 });
 
 app.post('/api/calculate-billable', (req, res) => {
-    const { hours, hourlyRate } = req.body;
+    const { hours, hourly_rate } = req.body;
     const pegarchBillableRate = 185; 
     const costMultiplier = 3; 
     let realHours = 0;

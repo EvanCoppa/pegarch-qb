@@ -23,6 +23,10 @@ app.post('/api/upload-csv', upload.array('files'), async (req, res) => {
     if (!req.files || req.files.length === 0) {
         return res.status(400).json({ error: 'No files uploaded' });
     }
+    // if file is not a csv file
+    if (!req.files.every(file => file.mimetype === 'text/csv')) {
+        return res.status(400).json({ error: 'Only CSV files are allowed' });
+    }
     try {
         const results = await businessLayer.processFiles(req.files);
         dataLayer.saveFiles(results);

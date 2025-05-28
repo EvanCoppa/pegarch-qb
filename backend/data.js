@@ -235,11 +235,11 @@ export function addClient({ client_id, name, contact_name, contact_email }) {
   return info.lastInsertRowid;
 }
 
-export function addProject({ client_id, name, description }) {
+export function addProject({project_id, client_id, name, description }) {
   let stmt, info;
 
-  stmt = db.prepare("INSERT INTO Project (client_id, name, description) VALUES (?, ?, ?)");
-  info = stmt.run(client_id, name, description);
+  stmt = db.prepare("INSERT INTO Project (project_id, client_id, name, description) VALUES (?, ?, ?, ?)");
+  info = stmt.run(project_id, client_id, name, description);
 
   return info.lastInsertRowid;
 }
@@ -281,18 +281,20 @@ export function addInvoiceItem({ invoice_id, timesheet_id, description, hours, h
 
 
 
-function ensureProject(project_name, client_id = 0) {
+function ensureProject(project_id ,project_name, client_id = 0) {
   const projects = getProjects();
   const numericClientId = Number(client_id);
 
   // console.log('Ensuring project:', project_name, 'for client:', numericClientId);
   const existingProjects = new Set(projects.map((p) => p.name));
   // console.log('Existing project names:', existingProjects);
-  if (existingProjects.has(project_name)) {
+  if (existingProjects.has(project_name) || Number(project_id) == 0){
+    console.log("Project already exists or client_id is 0, skipping:", project_name);
     return;
   }
   // Create new project with same client and description, but new name
   addProject({
+    project_id: project_id, // Auto-incremented by the database
     client_id: numericClientId,
     name: project_name,
     description: "",
@@ -329,11 +331,14 @@ export function saveFiles(files) {
     if (!project.Projects || project.Projects === "" || project.Projects === "Projects" || project.Projects === "Totals:") {
       continue;
     }
-    const [client_id, ...nameParts] = project.Projects.split(" ");
+    const [project_id, ...nameParts] = project.Projects.split(" ");
     const project_name = nameParts.join(" ");
+    if (project_id === "0000") {
+      // Skip projects with ID 0000
+      continue;
+    }
 
-    ensureClient(client_id);
-    ensureProject(project_name, client_id);
+    ensureProject(project_id, project_name);
     delete project.Projects;
     if (project_name) {
       let hours = 0;
@@ -342,6 +347,7 @@ export function saveFiles(files) {
           hours = hours + parseFloat(project[date]);
         }
       }
+      console.log("Adding timesheet item:", timesheet_id, project_name, hours);
       addTimesheetItem({ timesheet_id: timesheet_id, project_id: getProjectIdByName(project_name).project_id, hours: hours, notes: "None", });
     }
   }

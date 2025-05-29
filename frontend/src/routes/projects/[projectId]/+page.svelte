@@ -10,8 +10,9 @@
     // fetch project by the projectId
     const resProject = await fetch("http://localhost:3000/api/projects/" + projectId);
      if (res.ok) {
+      project = await resProject.json();
+
       timecards = await res.json();
-         project = await resProject.json();
         console.log(project);
       
 

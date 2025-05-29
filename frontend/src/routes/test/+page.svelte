@@ -8,7 +8,7 @@
     const res = await fetch("http://localhost:3000/api/projects");
     if (res.ok) {
       projects = await res.json();
-    projects = projects.map(({ project_id, client_name, name }) => [project_id, client_name, name]);
+    projects = projects.map(({ project_id, name,  total_hours, tags}) => [project_id, name, total_hours, tags]);
     //   console.log(projects);
     }
   });
@@ -19,7 +19,7 @@
   <p class="text-center text-gray-500">No projects available.</p>
 {:else}
 <Table title="Test Table"
-       columns={["Project Id", "client_name", "Name"]}
+       columns={["Project Id", "Project Name", "Total Hours", "Tags" ,"Actions"]}
        data={projects}/>  
         {/if}
 

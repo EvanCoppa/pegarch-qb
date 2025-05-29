@@ -29,6 +29,7 @@
       <div class="p-4 w-1/6">Employee Name</div>
       <div class="p-4 w-1/6">Total Hours</div>
       <div class="p-4 w-1/6">Hourly Rate</div>
+      
       <div class="p-4 w-1/6">Work Date</div>
       <div class="p-4 w-1/6">Action</div>
     </div>

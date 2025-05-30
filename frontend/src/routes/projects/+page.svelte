@@ -1,9 +1,8 @@
 <script>
   import { onMount } from "svelte";
   import { preloadData, goto } from "$app/navigation";
-
-  import table from "$lib/components/tables/table.svelte";
-  import Table from "$lib/components/tables/table.svelte";
+   let showRowsWithZeroHours = true; // This variable controls whether to show rows with zero hours
+ 
   let projects = [];
   let masterProjects = [];
   let columns = [
@@ -13,7 +12,34 @@
     "Tags",
     "Actions",
   ];
+function handleInvoiceGeneration() {
+  // Select all checkboxes in the table body
+  const checkboxes = document.querySelectorAll('tbody input[type="checkbox"]');
+// /  console.log("Checkboxes:", checkboxes);
+  let checkedCount = Array.from(checkboxes).filter(cb => cb.checked).length;
+  // const selectAllCheckbox = document.getElementById('checkbox-all-search');
+  // const isSelectAllChecked = selectAllCheckbox ? selectAllCheckbox.checked : false;
+  // console.log('Select All Checkbox checked:', isSelectAllChecked);
+  // if (isSelectAllChecked) {
+  //    checkedCount = checkedCount - 1; // Exclude the "Select All" checkbox from the count
 
+  // }
+
+  const selectedRows = [];
+  checkboxes.forEach((cb, idx) => {
+    if (cb.checked) {
+      selectedRows.push(projects[idx]);
+    }
+  });
+  console.log("Selected rows data:", selectedRows);
+  if (selectedRows.length > 0) {
+    // Hash the selected rows' project IDs into a gibberish-looking string (but reversible)
+    const projectIds = selectedRows.map(row => row[0]);
+    // Simple base64 encoding for obfuscation (not secure, just gibberish)
+    const encoded = btoa(projectIds.join(","));
+    goto(`/invoice/${encoded}`);
+  }
+}
   onMount(async () => {
     const res = await fetch("http://localhost:3000/api/projects");
     if (res.ok) {
@@ -34,8 +60,25 @@
   <div class="flex flex-row justify-between m-4">
     <h1 class="text-3xl font-semibold my-auto">Projects</h1>
     <div class="flex items-center gap-2">
-      
-      <div class="w-full md:w-72">
+      <div class="w-full md:w-72 flex gap-5">
+        <button on:click={() => { showRowsWithZeroHours = !showRowsWithZeroHours; }}>
+          {showRowsWithZeroHours ? 'Exclude 0' : 'Show 0'}
+        </button>
+        <button
+          class="text-sm font-semibold text-white bg-red-500 hover:bg-red-600 rounded-lg px-4 py-2"
+          on:click={() => {
+            handleInvoiceGeneration();
+             
+          }}
+        >
+          Generate Invoice
+        </button>
+        <button
+          class="text-sm font-semibold text-white bg-red-500 hover:bg-red-600 rounded-lg px-4 py-2"
+           
+        >
+          Delete Project
+        </button>
         <div class="relative h-10 w-full min-w-[200px]">
           <div
             class="absolute top-2/4 right-3 grid h-5 w-5 -translate-y-2/4 place-items-center text-gray-500"
@@ -55,20 +98,13 @@
               ></path></svg
             >
           </div>
-          <input  on:input={(e) => {
-            projects = masterProjects; // Reset to original projects
-            const searchTerm = e.target.value.toLowerCase();
-            projects = projects.filter((project) =>
-              project[1].toLowerCase().includes(searchTerm)
-            );
-            console.log(projects); // For debugging purposes
-          }}
-            class="peer   w-full rounded-[7px] !border-2 border-gray-200 border-t-transparent bg-transparent px-3 py-2.5 !pr-9 font-sans text-sm font-normal text-gray-700   outline-0 transition-all placeholder-shown:border placeholder-shown:border-gray-200 placeholder-shown:border-t-gray-200 focus:border-2 focus:border-gray-900 focus:border-t-transparent focus:outline-0 disabled:border-0 disabled:bg-gray-50"
-            placeholder=" "
-          /><label
-            class=" pointer-events-none absolute left-0 -top-1.5 flex h-full w-full select-none !overflow-visible truncate text-[11px] font-normal leading-tight text-gray-500 transition-all before:pointer-events-none before:mt-[6.5px] before:mr-1 before:box-border before:block before:h-1.5 before:w-2.5 before:rounded-tl-md before:border-t before:border-l before:border-gray-200 before:transition-all after:pointer-events-none after:mt-[6.5px] after:ml-1 after:box-border after:block after:h-1.5 after:w-2.5 after:flex-grow after:rounded-tr-md after:border-t after:border-r after:border-blue-gray-200 after:transition-all peer-placeholder-shown:text-sm peer-placeholder-shown:leading-[3.75] peer-placeholder-shown:text-blue-gray-500 peer-placeholder-shown:before:border-transparent peer-placeholder-shown:after:border-transparent peer-focus:text-[11px] peer-focus:leading-tight peer-focus:text-gray-900 peer-focus:before:border-t-2 peer-focus:before:border-l-2 peer-focus:before:!border-gray-900 peer-focus:after:border-t-2 peer-focus:after:border-r-2 peer-focus:after:!border-gray-900 peer-disabled:text-transparent peer-disabled:before:border-transparent peer-disabled:after:border-transparent peer-disabled:peer-placeholder-shown:text-blue-gray-500 after:opacity-0 peer-focus:after:opacity-100"
-            >Search</label
-          >
+          <div>
+            <input
+              on:input={(e) => {
+                projects = masterProjects; const searchTerm = e.target.value.toLowerCase(); projects = projects.filter((project) => project[1].toLowerCase().includes(searchTerm));}}
+              class="peer w-full rounded-[7px] !border-2 border-gray-200 border-t-transparent bg-transparent px-3 py-2.5 !pr-9 font-sans text-sm font-normal text-gray-700 outline-0 transition-all placeholder-shown:border placeholder-shown:border-gray-200 placeholder-shown:border-t-gray-200 focus:border-2 focus:border-gray-900 focus:border-t-transparent focus:outline-0 disabled:border-0 disabled:bg-gray-50" placeholder=" "/>
+              <label class=" pointer-events-none absolute left-0 -top-1.5 flex h-full w-full select-none !overflow-visible truncate text-[11px] font-normal leading-tight text-gray-500 transition-all before:pointer-events-none before:mt-[6.5px] before:mr-1 before:box-border before:block before:h-1.5 before:w-2.5 before:rounded-tl-md before:border-t before:border-l before:border-gray-200 before:transition-all after:pointer-events-none after:mt-[6.5px] after:ml-1 after:box-border after:block after:h-1.5 after:w-2.5 after:flex-grow after:rounded-tr-md after:border-t after:border-r after:border-blue-gray-200 after:transition-all peer-placeholder-shown:text-sm peer-placeholder-shown:leading-[3.75] peer-placeholder-shown:text-blue-gray-500 peer-placeholder-shown:before:border-transparent peer-placeholder-shown:after:border-transparent peer-focus:text-[11px] peer-focus:leading-tight peer-focus:text-gray-900 peer-focus:before:border-t-2 peer-focus:before:border-l-2 peer-focus:before:!border-gray-900 peer-focus:after:border-t-2 peer-focus:after:border-r-2 peer-focus:after:!border-gray-900 peer-disabled:text-transparent peer-disabled:before:border-transparent peer-disabled:after:border-transparent peer-disabled:peer-placeholder-shown:text-blue-gray-500 after:opacity-0 peer-focus:after:opacity-100" >Search</label>
+          </div>
         </div>
       </div>
     </div>
@@ -109,6 +145,7 @@
       </thead>
       <tbody>
         {#each projects as row, rowIndex}
+        {#if showRowsWithZeroHours || row[2] > 0}
           <!-- svelte-ignore a11y_mouse_events_have_key_events -->
           <tr
             class="odd:bg-white odd:dark:bg-gray-900 even:bg-gray-50 even:dark:bg-gray-800 border-b dark:border-gray-700 border-gray-200 cursor-pointer"
@@ -152,6 +189,7 @@
               </div>
             </td>
           </tr>
+          {/if}
         {/each}
       </tbody>
     </table>

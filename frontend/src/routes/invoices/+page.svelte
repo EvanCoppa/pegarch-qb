@@ -80,12 +80,10 @@
     </div>
   </div>
     {:else}
-    <div class="w-full h-full flex">
-        <div class="m-auto">
-    <InvoiceForm />
+    <div class="w-full h-full  ">
+     <InvoiceForm />
 
-        </div>
-
+ 
     </div>
       {/if}
       

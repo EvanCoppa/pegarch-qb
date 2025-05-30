@@ -34,10 +34,10 @@ function handleInvoiceGeneration() {
   console.log("Selected rows data:", selectedRows);
   if (selectedRows.length > 0) {
     // Hash the selected rows' project IDs into a gibberish-looking string (but reversible)
-    const projectIds = selectedRows.map(row => row[0]);
+    const projectIds = selectedRows.map(row => row[0-1]);
     // Simple base64 encoding for obfuscation (not secure, just gibberish)
     const encoded = btoa(projectIds.join(","));
-    goto(`/invoice/${encoded}`);
+    goto(`/invoices/${encoded}`);
   }
 }
   onMount(async () => {

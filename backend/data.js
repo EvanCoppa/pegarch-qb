@@ -177,6 +177,22 @@ export function getTimeCardItemById(timesheet_id) {
         .all(timesheet_id);
     }
 
+export function getTimeCardDatesByProjectId(project_id) {
+  return db.prepare(
+    `
+     SELECT 
+        Timesheet.timesheet_id,
+        Timesheet.start_date,
+        Timesheet.end_date
+      FROM TimesheetItem
+      JOIN Timesheet ON TimesheetItem.timesheet_id = Timesheet.timesheet_id
+      WHERE TimesheetItem.project_id = ?
+	          AND TimesheetItem.hours > 0
+    `
+  ).all(project_id);
+}
+
+
 function getEmployeeByName(name) {
   const stmt = db.prepare("SELECT * FROM Employee WHERE name = ?");
   const employee = stmt.get(name);
@@ -212,6 +228,8 @@ export function getInvoiceById(invoice_id) {
     return invoice_id;
 }
 
+ 
+
 
 
 // Get all invoice items
@@ -237,7 +255,7 @@ export function addClient({ client_id, name, contact_name, contact_email }) {
 
 export function addProject({project_id, client_id, name, description }) {
   let stmt, info;
-
+  console.log("Adding project:", project_id, client_id, name, description);
   stmt = db.prepare("INSERT INTO Project (project_id, client_id, name, description) VALUES (?, ?, ?, ?)");
   info = stmt.run(project_id, client_id, name, description);
 
@@ -267,6 +285,7 @@ export function addTimesheetItem({ timesheet_id, project_id, hours, notes }) {
   return info.lastInsertRowid;
 }
 
+
 export function addInvoice({ client_id, invoice_date, due_date, total_amount, status = "pending" }) {
   const stmt = db.prepare("INSERT INTO Invoice (client_id, invoice_date, due_date, total_amount, status) VALUES (?, ?, ?, ?, ?)");
   const info = stmt.run(client_id, invoice_date, due_date, total_amount, status);
@@ -279,16 +298,29 @@ export function addInvoiceItem({ invoice_id, timesheet_id, description, hours, h
   return info.lastInsertRowid;
 }
 
+export function toggleProjectStatus(timesheet_item_ids) {
+  if (!Array.isArray(timesheet_item_ids) || timesheet_item_ids.length === 0) {
+    return false;
+  }
+  const stmt = db.prepare("UPDATE TimesheetItem SET approved = NOT approved WHERE timesheet_item_id = ?");
+  let updated = 0;
+  for (const id of timesheet_item_ids) {
+    const info = stmt.run(id);
+    if (info.changes > 0) updated++;
+  }
+  return updated === timesheet_item_ids.length;
+}
 
 
 function ensureProject(project_id ,project_name, client_id = 0) {
-  const projects = getProjects();
-  const numericClientId = Number(client_id);
+   const projects = getProjects();
+   const numericClientId = Number(client_id);
 
-  // console.log('Ensuring project:', project_name, 'for client:', numericClientId);
-  const existingProjects = new Set(projects.map((p) => p.name));
-  // console.log('Existing project names:', existingProjects);
-  if (existingProjects.has(project_name) || Number(project_id) == 0){
+   const existingProjects = new Set(projects.map((p) => p.project_id));
+  //  console.log("Ensuring project:", project_id, project_name, numericClientId);
+  //  console.log("Existing projects:", existingProjects);
+  //  console.log("Existing projects:", existingProjects.has(Number(project_id)));
+   if (existingProjects.has(Number(project_id)) || Number(project_id) == 0){
     console.log("Project already exists or client_id is 0, skipping:", project_name);
     return;
   }
@@ -348,7 +380,7 @@ export function saveFiles(files) {
         }
       }
       console.log("Adding timesheet item:", timesheet_id, project_name, hours);
-      addTimesheetItem({ timesheet_id: timesheet_id, project_id: getProjectIdByName(project_name).project_id, hours: hours, notes: "None", });
+      addTimesheetItem({ timesheet_id: timesheet_id, project_id: project_id, hours: hours, notes: "None", });
     }
   }
 

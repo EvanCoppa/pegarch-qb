@@ -221,6 +221,15 @@ app.get('/api/projects/:id', async (req, res) => {
 }
 );
 
+app.get('/api/projects/:id/timecard-dates', async (req, res) => {
+    try {
+        const dates = await dataLayer.getTimeCardDatesByProjectId(req.params.id);
+         res.json(dates);
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to fetch time card dates for project' });
+    }
+});
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);

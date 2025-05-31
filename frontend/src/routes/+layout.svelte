@@ -5,7 +5,7 @@
 	import Header from '$lib/components/header.svelte';
 	import Sidebar from '$lib/components/sidebar.svelte';
 </script>
-<div class="overflow-hidden h-screen flex flex-col">
+<div class="overflow-hidden h-screen flex flex-col ">
 
 <Header/>
 <div class="flex overflow-hidden h-screen ">

@@ -11,7 +11,7 @@
     });
 </script>
 
-<div class="h-screen w-[250px] bg-white text-black border-r-1 border-[#e3e4e8] p-4 gap-5 flex flex-col">
+<div class="h-screen w-[250px] min-w-[200px] bg-white text-black border-r-1 border-[#e3e4e8] p-4 gap-5 flex flex-col">
     <div class="flex gap-2">
         <h2 class="font-semibold dark:text-white text-lg ">
             Portland Team 

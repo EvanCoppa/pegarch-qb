@@ -1,43 +1,77 @@
 <script>
   import { onMount } from "svelte";
   import { preloadData, goto } from "$app/navigation";
-  let showRowsWithZeroHours = true; // This variable controls whether to show rows with zero hours
+  let showRowsWithZeroHours = true;
 
   let projects = [];
   let masterProjects = [];
   let columns = ["Project Id", "Project Name", "Total Hours", "Tags", "Actions"];
+  let checkedProjectIds = new Set();
+
   function handleInvoiceGeneration() {
-    // Select all checkboxes in the table body
-    const checkboxes = document.querySelectorAll('tbody input[type="checkbox"]');
-    // /  console.log("Checkboxes:", checkboxes);
-    let checkedCount = Array.from(checkboxes).filter((cb) => cb.checked).length;
-    // const selectAllCheckbox = document.getElementById('checkbox-all-search');
-    // const isSelectAllChecked = selectAllCheckbox ? selectAllCheckbox.checked : false;
-    // console.log('Select All Checkbox checked:', isSelectAllChecked);
-    // if (isSelectAllChecked) {
-    //    checkedCount = checkedCount - 1; // Exclude the "Select All" checkbox from the count
-
-    // }
-
-    const selectedRows = [];
-    checkboxes.forEach((cb, idx) => {
-      if (cb.checked) {
-        selectedRows.push(projects[idx]);
-      }
-    });
-    console.log("Selected rows data:", selectedRows);
+    const selectedRows = projects.filter((row) => checkedProjectIds.has(row[0]));
     if (selectedRows.length > 0) {
       const encoded = btoa(selectedRows.join("|"));
       goto(`/invoices/${encoded}`);
     }
   }
+
+  function toggleCheckbox(projectId) {
+    if (checkedProjectIds.has(projectId)) {
+      checkedProjectIds.delete(projectId);
+    } else {
+      checkedProjectIds.add(projectId);
+    }
+    // force update
+    checkedProjectIds = new Set(checkedProjectIds);
+    console.log("Checked Project IDs:", Array.from(checkedProjectIds));
+  }
+
+  function recheckCheckboxes() {
+    // Wait for DOM update
+    setTimeout(() => {
+      // Get all table rows in tbody
+      const rows = document.querySelectorAll('tbody tr');
+      rows.forEach(row => {
+         // Get the project id from the second cell (first column after checkbox)
+        const idCell = row.querySelectorAll('td, th')[1];
+         
+        if (!idCell) return;
+        const projectId = idCell.textContent.trim();
+        // console.log("Project ID:", projectId);
+        // Find the checkbox in this row (first th)
+        const checkbox = row.querySelector('input[type="checkbox"]');
+         if (checkbox) {
+          console.log("Checkbox for Project ID:", projectId, "is checked:", checkedProjectIds.has(projectId));
+          console.log(checkedProjectIds)
+          checkbox.checked = checkedProjectIds.has(Number(projectId));
+        }
+      });
+    }, 0);
+  }
+
+  function toggleSelectAll(checked) {
+    if (checked) {
+      projects.forEach(row => checkedProjectIds.add(row[0]));
+    } else {
+      projects.forEach(row => checkedProjectIds.delete(row[0]));
+    }
+    checkedProjectIds = new Set(checkedProjectIds);
+  }
+
+  let searchTerm = "";
+  function handleSearch(e) {
+    searchTerm = e.target.value.toLowerCase();
+    projects = masterProjects.filter((project) => project[1].toLowerCase().includes(searchTerm));
+    recheckCheckboxes();
+  }
+
   onMount(async () => {
     const res = await fetch("http://localhost:3000/api/projects");
     if (res.ok) {
       projects = await res.json();
       projects = projects.map(({ project_id, name, total_hours, tags }) => [project_id, name, total_hours, tags]);
-      //   console.log(projects);
-      masterProjects = projects; // Store the original projects array
+      masterProjects = projects;
     }
   });
 </script>
@@ -71,11 +105,8 @@
         </div>
         <div>
           <input
-            on:input={(e) => {
-              projects = masterProjects;
-              const searchTerm = e.target.value.toLowerCase();
-              projects = projects.filter((project) => project[1].toLowerCase().includes(searchTerm));
-            }}
+            on:input={ () => handleSearch(event) }
+            
             class="peer w-full rounded-[7px] !border-2 border-gray-200 border-t-transparent bg-transparent px-3 py-2.5 !pr-9 font-sans text-sm font-normal text-gray-700 outline-0 transition-all placeholder-shown:border placeholder-shown:border-gray-200 placeholder-shown:border-t-gray-200 focus:border-2 focus:border-gray-900 focus:border-t-transparent focus:outline-0 disabled:border-0 disabled:bg-gray-50"
             placeholder=" "
           />
@@ -137,6 +168,7 @@
             id="checkbox-all-search"
             type="checkbox"
             class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:focus:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+            on:click={() => toggleCheckbox(row[0])}
             />
             <label for="checkbox-all-search" class="sr-only">checkbox</label>
           </div>

@@ -230,6 +230,19 @@ app.get('/api/projects/:id/timecard-dates', async (req, res) => {
     }
 });
 
+app.post('/api/invoices', async (req, res) => {
+    try {
+        const { employee_id, date, amount } = req.body;
+        if (!employee_id || !date || typeof amount !== 'number') {
+            return res.status(400).json({ error: 'Missing or invalid invoice data' });
+        }
+        const newInvoice = await dataLayer.createInvoice(employee_id, date, amount);
+        res.status(201).json(newInvoice);
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to create invoice' });
+    }
+});
+ 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);

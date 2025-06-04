@@ -253,13 +253,28 @@ export function addClient({ client_id, name, contact_name, contact_email }) {
   return info.lastInsertRowid;
 }
 
-export function addProject({project_id, client_id, name, description }) {
-  let stmt, info;
-  console.log("Adding project:", project_id, client_id, name, description);
-  stmt = db.prepare("INSERT INTO Project (project_id, client_id, name, description) VALUES (?, ?, ?, ?)");
-  info = stmt.run(project_id, client_id, name, description);
-
+const insertProject = db.transaction(({ project_id, client_id, name, description }) => {
+  const stmt = db.prepare(
+    "INSERT INTO Project (project_id, client_id, name, description) VALUES (?, ?, ?, ?)"
+  );
+  const info = stmt.run(project_id, client_id, name, description);
   return info.lastInsertRowid;
+});
+
+// Atomically create a project and its related timecards
+export const createProjectWithTimecards = db.transaction(({ project, timesheet, items }) => {
+  const project_id = insertProject(project);
+  const timesheet_id = addTimesheet(timesheet);
+  if (Array.isArray(items)) {
+    for (const item of items) {
+      addTimesheetItem({ ...item, timesheet_id });
+    }
+  }
+  return { project_id, timesheet_id };
+});
+
+export function addProject({ project_id, client_id, name, description }) {
+  return insertProject({ project_id, client_id, name, description });
 }
 
 export function addTimesheet({ employee_id, approved = 0, notes, start_date, end_date }) {

@@ -16,6 +16,23 @@
     }
   }
 
+  function selectAllVisibleRows() {
+    const isChecked = event.target.checked;
+    console.log("Select All Checked:", isChecked);
+    if (isChecked) {
+      projects.forEach(row => {
+        if (showRowsWithZeroHours || row[2] > 0) {
+          checkedProjectIds.add(row[0]);
+        }
+      });
+    } else {
+      projects.forEach(row => checkedProjectIds.delete(row[0]));
+    }
+     
+    checkedProjectIds = new Set(checkedProjectIds);
+    recheckCheckboxes();
+  }
+
   function toggleCheckbox(projectId) {
     if (checkedProjectIds.has(projectId)) {
       checkedProjectIds.delete(projectId);
@@ -24,7 +41,7 @@
     }
     // force update
     checkedProjectIds = new Set(checkedProjectIds);
-    console.log("Checked Project IDs:", Array.from(checkedProjectIds));
+    // console.log("Checked Project IDs:", Array.from(checkedProjectIds));
   }
 
   function recheckCheckboxes() {
@@ -42,8 +59,8 @@
         // Find the checkbox in this row (first th)
         const checkbox = row.querySelector('input[type="checkbox"]');
          if (checkbox) {
-          console.log("Checkbox for Project ID:", projectId, "is checked:", checkedProjectIds.has(projectId));
-          console.log(checkedProjectIds)
+          // console.log("Checkbox for Project ID:", projectId, "is checked:", checkedProjectIds.has(projectId));
+          // console.log(checkedProjectIds)
           checkbox.checked = checkedProjectIds.has(Number(projectId));
         }
       });
@@ -138,10 +155,11 @@
           type="checkbox"
           class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:focus:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
           on:change={(e) => {
-            const isChecked = e.target.checked;
-            document.querySelectorAll('tbody input[type="checkbox"]').forEach((checkbox) => {
-            checkbox.checked = isChecked;
-            });
+            selectAllVisibleRows();
+            // const isChecked = e.target.checked;
+            // document.querySelectorAll('tbody input[type="checkbox"]').forEach((checkbox) => {
+            // checkbox.checked = isChecked;
+            // });
           }}
           />
           <label for="checkbox-all-search" class="sr-only">checkbox</label>

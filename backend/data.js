@@ -244,7 +244,7 @@ export function addEmployee({ name, email, role }) {
 }
 
 export function addClient({ client_id, name, contact_name, contact_email }) {
-  console.log("Adding client:", client_id, name, contact_name, contact_email);
+  // console.log("Adding client:", client_id, name, contact_name, contact_email);
 
   const intClientId = parseInt(client_id, 10);
 
@@ -255,7 +255,7 @@ export function addClient({ client_id, name, contact_name, contact_email }) {
 
 export function addProject({project_id, client_id, name, description }) {
   let stmt, info;
-  console.log("Adding project:", project_id, client_id, name, description);
+  // console.log("Adding project:", project_id, client_id, name, description);
   stmt = db.prepare("INSERT INTO Project (project_id, client_id, name, description) VALUES (?, ?, ?, ?)");
   info = stmt.run(project_id, client_id, name, description);
 
@@ -321,7 +321,7 @@ function ensureProject(project_id ,project_name, client_id = 0) {
   //  console.log("Existing projects:", existingProjects);
   //  console.log("Existing projects:", existingProjects.has(Number(project_id)));
    if (existingProjects.has(Number(project_id)) || Number(project_id) == 0){
-    console.log("Project already exists or client_id is 0, skipping:", project_name);
+    // console.log("Project already exists or client_id is 0, skipping:", project_name);
     return;
   }
   // Create new project with same client and description, but new name
@@ -350,39 +350,113 @@ function ensureClient(client_id) {
   }
 }
 
-export function saveFiles(files) {
-  const projects = files.map((file) => file.data).flat();
+// Processing files: [
+//   {
+//     originalName: '12.23 - 1.05-Table 1.csv',
+//     data: [
+//       [Object], [Object], [Object], [Object],
+//       [Object], [Object], [Object], [Object],
+//       [Object], [Object], [Object], [Object],
+//       [Object], [Object], [Object], [Object],
+//       [Object], [Object], [Object], [Object],
+//       [Object], [Object], [Object], [Object],
+//       [Object], [Object], [Object], [Object],
+//       [Object], [Object], [Object], [Object],
+//       [Object], [Object], [Object], [Object],
+//       [Object], [Object], [Object], [Object],
+//       [Object], [Object], [Object], [Object],
+//       [Object], [Object]
+//     ]
+//   },
+//   {
+//     originalName: '12.25 - 1.7-Table 1.csv',
+//     data: [
+//       [Object], [Object], [Object], [Object],
+//       [Object], [Object], [Object], [Object],
+//       [Object], [Object], [Object], [Object],
+//       [Object], [Object], [Object], [Object],
+//       [Object], [Object], [Object], [Object],
+//       [Object], [Object], [Object], [Object],
+//       [Object], [Object], [Object], [Object],
+//       [Object], [Object], [Object], [Object],
+//       [Object], [Object], [Object], [Object],
+//       [Object], [Object], [Object], [Object],
+//       [Object], [Object], [Object], [Object],
+//       [Object], [Object], [Object], [Object],
+//       [Object], [Object], [Object], [Object],
+//       [Object]
+//     ]
+//   }
+// ]
+const saveFilesTransaction = db.transaction((files) => {
+  for (const file of files) {
+   
+
+     
+  
+  const projects = file.data;
+
+  // console.log("Processing files:", files);
+  console.log("Processing Projects:", projects);
   const name = projects[0].name;
-  // console.log("Saving files for employee:", projects);
   projects.splice(0, 1);
+
   const start_date = Object.entries(projects[1])[1][0];
   const end_date = Object.entries(projects[1])[14][0];
+
   const employee = getEmployeeByName(name);
-  const timesheet_id = addTimesheet({ employee_id: employee.employee_id, approved: 0, notes: "", start_date: start_date, end_date: end_date,});
+  const timesheet_id = addTimesheet({
+    employee_id: employee.employee_id,
+    approved: 0,
+    notes: "",
+    start_date,
+    end_date,
+  });
+
   for (const project of projects) {
-    if (!project.Projects || project.Projects === "" || project.Projects === "Projects" || project.Projects === "Totals:") {
+    if (
+      !project.Projects ||
+      project.Projects === "" ||
+      project.Projects === "Projects" ||
+      project.Projects === "Totals:"
+    ) {
       continue;
     }
+
     const [project_id, ...nameParts] = project.Projects.split(" ");
     const project_name = nameParts.join(" ");
-    if (project_id === "0000") {
-      // Skip projects with ID 0000
-      continue;
-    }
+
+    if (project_id === "0000") continue;
 
     ensureProject(project_id, project_name);
     delete project.Projects;
+
     if (project_name) {
       let hours = 0;
       for (let date in project) {
-        if (date != "Pay Period Total" && !isNaN(parseFloat(project[date]))) {
-          hours = hours + parseFloat(project[date]);
+        if (date !== "Pay Period Total" && !isNaN(parseFloat(project[date]))) {
+          hours += parseFloat(project[date]);
         }
       }
-      console.log("Adding timesheet item:", timesheet_id, project_name, hours);
-      addTimesheetItem({ timesheet_id: timesheet_id, project_id: project_id, hours: hours, notes: "None", });
+
+      addTimesheetItem({
+        timesheet_id,
+        project_id,
+        hours,
+        notes: "None",
+      });
     }
   }
-
+  }
   return [];
+
+});
+
+export function saveFiles(files) {
+  try {
+    return saveFilesTransaction(files);
+  } catch (err) {
+    console.error("Transaction failed, rolling back:", err.message);
+    return [];
+  }
 }

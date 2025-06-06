@@ -1,16 +1,24 @@
 <script>
   import { page } from "$app/state";
   import { onMount } from "svelte";
+    import { preloadData, goto } from "$app/navigation";
+
   const projectId = page.params.projectId;
   let timecards;
   let project = {name: ""};
     let columns = [
-    "Timesheet Id",
+    "Id",
     "Name",
-    "Total Hours",
-    "Tags",
+    "Hours",
+    "Hourly Rate",
+    "Start Date",
+    "End Date",
     "Actions",
   ];
+  function handleDoubbleClick(id) {
+    console.log("Double clicked on timesheet with ID:", id);
+    goto(`/timecards/${id}`);
+  }
 
   onMount(async () => {
     const res = await fetch("http://localhost:3000/api/projects/" + projectId + "/timecards");
@@ -21,14 +29,22 @@
 
       timecards = await res.json();
         console.log(project);
-      
+        console.log(timecards);
+      timecards.sort((a, b) => {
+        const dateA = new Date(a.start_date);
+        const dateB = new Date(b.start_date);
+        if (dateA < dateB) return -1;
+        if (dateA > dateB) return 1;
+        // If start dates are equal, sort by employee_name
+        return a.employee_name.localeCompare(b.employee_name);
+      });
 
     }
   });
 </script>
 <div class=" flex flex-col w-full h-full overflow-x-hidden bg-white p-4">
   <div class="flex flex-row justify-between m-4">
-    <h1 class="text-3xl font-semibold my-auto">Projects</h1>
+    <h1 class="text-3xl font-semibold my-auto">Timecards in {project.name}</h1>
     <div class="flex items-center gap-2">
       
       <div class="w-full md:w-72">
@@ -109,12 +125,10 @@
           
           
           
-          <!-- svelte-ignore a11y_mouse_events_have_key_events -->
-          <tr
+           <tr
             class="odd:bg-white odd:dark:bg-gray-900 even:bg-gray-50 even:dark:bg-gray-800 border-b dark:border-gray-700 border-gray-200 cursor-pointer"
-            on:dblclick={() => goto(`/projects/${row[0]}`)}
-            on:mouseenter={() => preloadData(`/projects/${row[0]}`)}
-          >
+            on:dblclick={() => handleDoubbleClick(timecard.timesheet_id)}
+           >
             <th scope="col" class="p-4">
               <div class="flex items-center">
                 <input
@@ -138,6 +152,12 @@
               <td class="px-6 py-4">
                 {timecard.employee_hourly_rate}
               </td>
+              <td class="px-6 py-4">
+                {timecard.start_date}
+              </td>
+              <td class="px-6 py-4">
+                {timecard.end_date}
+              </td>
                
              <!-- <td>
               <div
@@ -147,13 +167,9 @@
             </td> -->
             <td>
               <div class="flex gap-4">
+                
                 <button
-                  class="text-sm font-semibold text-white grow h-8 min-w-[60px] hover:bg-blue-500 hover:scale-[102%] duration-150 bg-blue-400 rounded-lg"
-                >
-                  <a href="/" aria-label="Edit Details">Edit</a>
-                </button>
-                <button
-                  class="text-sm font-semibold text-white hover:bg-red-500 hover:scale-[102%] duration-150 grow h-8 min-w-[60px] bg-red-400 rounded-lg"
+                  class="text-sm font-semibold w-24 text-white hover:bg-red-500 hover:scale-[102%] duration-150   h-8 min-w-[60px] bg-red-400 rounded-lg"
                 >
                   <a href="/" aria-label="Delete Details">Delete</a>
                 </button>

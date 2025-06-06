@@ -1,5 +1,7 @@
 <script>
   import { page } from "$app/state";
+  import { preloadData, goto } from "$app/navigation";
+
   import { onMount } from "svelte";
   let projects = [];
   let dateCombinations = [];
@@ -9,7 +11,7 @@
     const combos = new Set();
     projects.forEach((project) => {
       if (project.timesheets) {
-         project.timesheets.forEach((ts) => {
+        project.timesheets.forEach((ts) => {
           if (!combos.has(`${ts.start_date}|${ts.end_date}`)) {
             combos.add(`${ts.start_date}|${ts.end_date}`);
           }
@@ -17,13 +19,16 @@
       }
     });
 
+    
+
     return Array.from(combos).map((str) => {
       const [start_date, end_date] = str.split("|");
       return { start_date, end_date };
     });
   }
 
-  function handleInvoiceGeneration() {
+ 
+  function handleSubmitAll() {
     // Select all checkboxes in the table body
     const checkboxes = document.querySelectorAll('tbody input[type="checkbox"]');
     let checkedCount = Array.from(checkboxes).filter((cb) => cb.checked).length;
@@ -34,12 +39,45 @@
         selectedRows.push(projects[idx]);
       }
     });
-    console.log("Selected rows data:", selectedRows);
+    // console.log("Selected rows data:", selectedRows);
     if (selectedRows.length > 0) {
       const encoded = btoa(selectedRows.join("|"));
       goto(`/invoices/${encoded}`);
     }
   }
+
+  async function handleSubmit(event) {
+    event.preventDefault();
+     const form = event.target.closest("form");
+     const checkboxes = form.querySelectorAll('tbody input[type="checkbox"]');
+     console.log("Checkboxes in form:", checkboxes);
+    const checkedRows = [];
+    checkboxes.forEach((cb, idx) => {
+      if (cb.checked) {
+         // Find the project for this form
+        const projectIndex = Array.from(form.parentNode.children).indexOf(form) - 1;
+         const project = projects[projectIndex];
+         if (project && project.timesheets && project.timesheets[idx]) {
+          checkedRows.push(project.timesheets[idx]);
+        }
+      }
+    });
+
+    // For each checked row, create a new invoice in the DB
+    for (const row of checkedRows) {
+      // You may need to adjust these fields based on your backend and row structure
+      const payload = {
+      employee_id: row.employee_id,
+      date: row.start_date,
+      amount: row.hours
+      };
+      await fetch('http://localhost:3000/api/invoices', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+      });
+    }
+    }
 
   function selectCheckboxesByDate(startDate, endDate) {
     // Find all rows in all tables
@@ -71,21 +109,45 @@
         tags: tags ? tags.split(";") : [],
       };
     });
-    // console.log("Project", projects);
-    for (const project of projects) {
-      // console.log(project);
-      const res = await fetch(`http://localhost:3000/api/projects/${project.project_id}/timecard-dates`);
+     for (const project of projects) {
+      console.log("Project", projects);
+       const res = await fetch(`http://localhost:3000/api/projects/${project.project_id}/timecard-dates`);
+     let timesheets = await res.json();  
+     console.log("Timesheets", timesheets);
       if (res.ok) {
-        let timesheet = await res.json(); // Assuming this is an array of timecards
-        // Remove duplicates based on start_date and end_date
-        const seen = new Set();
-        timesheet = timesheet.filter(ts => {
+        for (const timesheet of timesheets) {
+          const hours = await fetch(`http://localhost:3000/api/projects/${project.project_id}/timesheet-items/${timesheet.timesheet_id}`);
+            const hoursData = await hours.json();
+           console.log("Hours Data", hoursData);
+            timesheet.hours = hoursData.hours !== undefined ? hoursData.hours : hoursData;
+            timesheet.employees = [];
+          }
+               
+
+        
+        // Combine timesheets with the same start_date and end_date by summing their hours
+        const timesheetMap = new Map();
+        for (const ts of timesheets) {
+          // console.log("Timesheet", ts);
           const key = `${ts.start_date}|${ts.end_date}`;
-          if (seen.has(key)) return false;
-          seen.add(key);
-          return true;
-        });
-        project.timesheets = timesheet; // Add as a new property to the project object
+          if (timesheetMap.has(key)) {
+            const existing = timesheetMap.get(key);
+            existing.hours += ts.hours;
+            // Add employee name to employees array if not already present
+            if (ts.employee_name && !existing.employees.includes(ts.employee_name)) {
+              existing.employees.push(ts.employee_name);
+            }
+          } else {
+            // Initialize employees array with the current employee_name if present
+            timesheetMap.set(key, { 
+              ...ts, 
+              employees: ts.employee_name ? [ts.employee_name] : [] 
+            });
+          }
+        }
+        timesheets = Array.from(timesheetMap.values());
+        project.timesheets = timesheets; // Add as a new property to the project object
+       
         projects = projects;
       }
     }
@@ -138,22 +200,27 @@
     <div class="flex flex-col w-full max-h-screen h-screen overflow-auto scrollbar-hide max-w-2/3 pb-24 gap-4">
       <div class="flex flex-row justify-between m-4">
         <h1 class="text-2xl font-bold text-gray-800 my-auto">Projects</h1>
-        <button class="px-5 py-2 rounded-lg bg-blue-600 text-white font-medium shadow hover:bg-blue-700 transition" on:click={() => handleInvoiceGeneration()}> Submit All </button>
+        <button class="px-5 py-2 rounded-lg bg-blue-600 text-white font-medium shadow hover:bg-blue-700 transition" on:click={() => handleSubmitAll()}> Submit All </button>
       </div>
 
       {#each projects as project}
-        <form class=" bg-white p-4 rounded-2xl flex flex-col gap-4 border border-gray-200 border-dashed border-2 shadow-sm">
+        <form on:submit={(event) => handleSubmit(event)} class=" bg-white p-4 rounded-2xl flex flex-col gap-4 border border-gray-200 border-dashed  shadow-sm">
           <div class="flex flex-row justify-between">
             <h1 class="text-xl ml-2 font-semibold my-auto">{project.project_id}: {project.name}</h1>
             <div>
-              <button class="h-8 w-24 border-2 border-gray-100 hover:border-gray-200 rounded-md text-sm text-gray-800 font-medium"> Submit </button>
-              <!-- <button class="h-8 w-24 border-2 border-gray-100 hover:border-gray-200 rounded-md text-sm text-gray-800 font-medium">
-                Submit All
-              </button> -->
+              <button type="submit" class="h-8 w-24 border-2 border-gray-100 hover:border-gray-200 rounded-md text-sm text-gray-800 font-medium" > Submit </button>
+               
             </div>
           </div>
 
           <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400 table-fixed rounded-lg overflow-hidden">
+            <!-- <colgroup>
+              <col style="width: 70px;" />
+              <col style="width: 150px;" />
+              <col style="width: 150px;" />
+              <col style="width: 150px;" />
+              <col style="width: 150px;" />
+            </colgroup> -->
             <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
               <tr>
                 <th scope="col" class="p-4">
@@ -174,11 +241,17 @@
                 <th scope="col" class="px-6 py-3 truncate"> Start Date </th>
                 <th scope="col" class="px-6 py-3 truncate"> End Date </th>
                 <th scope="col" class="px-6 py-3 truncate"> Total Hours </th>
+                <th scope="col" class="px-6 py-3 truncate"> Employees </th>
               </tr>
             </thead>
             <tbody>
+              {#if project.timesheets && project.timesheets.length === 0}
+                <tr class="odd:bg-white odd:dark:bg-gray-900 even:bg-gray-50 even:dark:bg-gray-800 border-b dark:border-gray-700 border-gray-100">
+                  <td colspan="4" class="px-6 py-4 text-center">No timesheets available for this project.</td>
+                </tr>
+              {:else}
               {#each project.timesheets as row, rowIndex}
-                 <tr class="odd:bg-white odd:dark:bg-gray-900 even:bg-gray-50 even:dark:bg-gray-800 border-b dark:border-gray-700 border-gray-100 cursor-pointer">
+                <tr class="odd:bg-white odd:dark:bg-gray-900 even:bg-gray-50 even:dark:bg-gray-800 border-b dark:border-gray-700 border-gray-100 cursor-pointer">
                   <th scope="col" class="p-4">
                     <div class="flex items-center gap-4">
                       <input
@@ -195,10 +268,20 @@
                     {row.end_date}
                   </td>
                   <td class="px-6 py-4 truncate">
-                    {row.total_hours}
+                    {row.hours}
                   </td>
+                    <td class="px-6 py-4 truncate">
+                    {#if row.employees && row.employees.length > 0}
+                      {#each row.employees as employee, i}
+                      {employee}{#if i < row.employees.length - 1}, {/if}
+                      {/each}
+                    {:else}
+                      {row.employee_name}
+                    {/if}
+                    </td>
                 </tr>
               {/each}
+              {/if}
             </tbody>
           </table>
         </form>

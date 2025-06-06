@@ -7,6 +7,7 @@ import cors from 'cors';
 
 import * as dataLayer from './data.js';
 import * as businessLayer from './business.js';
+import e from 'express';
 
 
 // Import your business/data layer modules here
@@ -93,6 +94,7 @@ app.get('/api/employees', async (req, res) => {
     }
 });
 
+
 // Get all time cards
 app.get('/api/timecards', async (req, res) => {
     try {
@@ -123,6 +125,19 @@ app.get('/api/projects/:id/timecards', async (req, res) => {
         res.json(timecards);
     } catch (err) {
         res.status(500).json({ error: 'Failed to fetch time cards for project' });
+    }
+});
+
+app.get('/api/projects/:projectId/timesheet-items/:timesheetId', async (req, res) => {
+    try {
+        const { projectId, timesheetId } = req.params;
+        const hours = await dataLayer.getTimesheetItemHours(projectId, timesheetId);
+        if (hours === undefined || hours === null) {
+            return res.status(404).json({ error: 'Timesheet item not found' });
+        }
+        res.json({ hours });
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to fetch timesheet item hours' });
     }
 });
 
@@ -193,7 +208,7 @@ app.post('/api/invoices', async (req, res) => {
         const newInvoice = await dataLayer.createInvoice(employee_id, date, amount);
         res.status(201).json(newInvoice);
     } catch (err) {
-        res.status(500).json({ error: 'Failed to create invoice' });
+        res.status(500).json({ error: 'Failed to create invoice: ' + err.message });
     }
 }
 );

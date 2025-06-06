@@ -141,21 +141,40 @@ export function getTimeCardById(timesheet_id) {
 
 export function getTimeCardsByProjectId(project_id) {
     return db
-        .prepare(
-            `
-                SELECT 
-                    Timesheet.*, 
-                    Employee.name AS employee_name,
-                    Employee.hourly_rate AS employee_hourly_rate,
-                    IFNULL(SUM(TimesheetItem.hours), 0) AS total_hours
-                FROM Timesheet
-                JOIN Employee ON Timesheet.employee_id = Employee.employee_id
-                LEFT JOIN TimesheetItem ON Timesheet.timesheet_id = TimesheetItem.timesheet_id
-                WHERE TimesheetItem.project_id = ?
-                GROUP BY Timesheet.timesheet_id
-            `
-        )
-        .all(project_id);
+      .prepare(
+        `
+          SELECT 
+            Timesheet.*, 
+            Employee.name AS employee_name,
+            Employee.hourly_rate AS employee_hourly_rate,
+            TimesheetItem.hours AS total_hours
+          FROM Timesheet
+          JOIN Employee ON Timesheet.employee_id = Employee.employee_id
+          JOIN TimesheetItem ON Timesheet.timesheet_id = TimesheetItem.timesheet_id
+          WHERE TimesheetItem.project_id = ?
+        `
+      )
+      .all(project_id);
+}
+
+export function getTimesheetItemsByProjectAndDate(project_id, start_date, end_date) {
+  return db.prepare(
+    `
+      SELECT 
+        TimesheetItem.*, 
+        Timesheet.start_date, 
+        Timesheet.end_date, 
+        Employee.name AS employee_name,
+        Project.name AS project_name
+      FROM TimesheetItem
+      JOIN Timesheet ON TimesheetItem.timesheet_id = Timesheet.timesheet_id
+      JOIN Employee ON Timesheet.employee_id = Employee.employee_id
+      JOIN Project ON TimesheetItem.project_id = Project.project_id
+      WHERE TimesheetItem.project_id = ?
+        AND Timesheet.start_date = ?
+        AND Timesheet.end_date = ?
+    `
+  ).all(project_id, start_date, end_date);
 }
 
 // Get all timesheet items by timesheet ID
@@ -183,11 +202,14 @@ export function getTimeCardDatesByProjectId(project_id) {
      SELECT 
         Timesheet.timesheet_id,
         Timesheet.start_date,
-        Timesheet.end_date
+        Timesheet.end_date,
+        Employee.employee_id,
+        Employee.name AS employee_name
       FROM TimesheetItem
       JOIN Timesheet ON TimesheetItem.timesheet_id = Timesheet.timesheet_id
+      JOIN Employee ON Timesheet.employee_id = Employee.employee_id
       WHERE TimesheetItem.project_id = ?
-	          AND TimesheetItem.hours > 0
+        AND TimesheetItem.hours > 0
     `
   ).all(project_id);
 }
@@ -210,7 +232,7 @@ export function getInvoiceById(invoice_id) {
   return invoice;
 }
 
- export function createInvoice({ client_id, invoice_date, due_date, items = [], status = "pending" }) {
+ export function createInvoice({  invoice_date, due_date, items = [], client_id = 0,  status = "pending" }) {
     const total_amount = items.reduce((sum, item) => sum + (item.amount || 0), 0);
     const invoice_id = addInvoice({ client_id, invoice_date, due_date, total_amount, status });
 
@@ -230,6 +252,16 @@ export function getInvoiceById(invoice_id) {
 
  
 
+
+
+ 
+export function getTimesheetItemHours(project_id, timesheet_id) {
+  const stmt = db.prepare(
+    `SELECT hours FROM TimesheetItem WHERE timesheet_id = ? AND project_id = ?`
+  );
+  const item = stmt.get(timesheet_id, project_id);
+  return item ? item.hours : 0;
+}
 
 
 // Get all invoice items

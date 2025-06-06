@@ -2,3 +2,4 @@ node_modules
 frontend/postcss.config.cjs
 database.sqlite
 backend/uploads/
+key.txt
